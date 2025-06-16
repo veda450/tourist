@@ -1,34 +1,30 @@
-from flask import Flask, render_template, g
-import sqlite3
+from flask import Flask, render_template_string, send_file
 
 app = Flask(__name__)
-DATABASE = 'hotels.db'
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    return db
+menu = {
+    'Tiffin 1': {'name': 'Idli with Sambar & Chutney', 'price': 40, 'image': 'idli.png'},
+    'Tiffin 2': {'name': 'Masala Dosa', 'price': 50, 'image': 'masala.png'},
+    'Tiffin 3': {'name': 'Poori', 'price': 40, 'image': 'poori.png'},
+    'Tiffin 4': {'name': 'Chapathi with Curry', 'price': 45, 'image': 'chapathi.png'},
+    'Lunch': {'name': 'Veg Meals', 'price': 130, 'image': 'image.png'}
+}
 
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db:
-        db.close()
+def read_file(file):
+    with open(file, 'r', encoding='utf-8') as f:
+        return f.read()
 
 @app.route('/')
-def index():
-    db = get_db()
-    hotels = db.execute('SELECT * FROM hotels').fetchall()
-    return render_template('index.html', hotels=hotels)
+def welcome():
+    return render_template_string(read_file('welcome.html'))
 
-@app.route('/hotel/<int:hotel_id>')
-def hotel(hotel_id):
-    db = get_db()
-    hotel = db.execute('SELECT * FROM hotels WHERE id = ?', (hotel_id,)).fetchone()
-    menu = db.execute('SELECT * FROM menu WHERE hotel_id = ?', (hotel_id,)).fetchall()
-    return render_template('hotel.html', hotel=hotel, menu=menu)
+@app.route('/menu')
+def menu_page():
+    return render_template_string(read_file('index.html'), menu=menu)
+
+@app.route('/<filename>')
+def send_static_file(filename):
+    return send_file(filename)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5000)
