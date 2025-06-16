@@ -1,0 +1,51 @@
+
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'hotelapp'
+        CONTAINER_NAME = 'hotelapp-container'
+    }
+
+    stages {
+        stage('Clone') {
+            steps {
+                git 'https://github.com/your-username/your-repo.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build(IMAGE_NAME)
+                }
+            }
+        }
+
+        stage('Stop Previous Container') {
+            steps {
+                script {
+                    sh "docker stop ${CONTAINER_NAME} || true"
+                    sh "docker rm ${CONTAINER_NAME} || true"
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                script {
+                    sh "docker run -d -p 5000:5000 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Application deployed at http://localhost:5000"
+        }
+        failure {
+            echo "❌ Build or deployment failed"
+        }
+    }
+}
